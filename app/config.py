@@ -5,7 +5,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # Secrets — no defaults. Missing -> startup fails, naming the variable.
-    DATABASE_URL: str 
+    DATABASE_URL: str
+    DIRECT_DATABASE_URL: str | None = None
     JWT_SECRET_KEY: str
     GEMINI_API_KEY: str
 
@@ -29,4 +30,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-
