@@ -1,10 +1,12 @@
 import uuid
 import logging
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.errors import AppError, error_response
-from app.routers import auth  # <-- IMPORT THE ROUTER
+from app.routers import auth
+from app.deps import get_current_user
+from app.models import User
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -16,7 +18,6 @@ def create_app() -> FastAPI:
         redoc_url=None,
     )
 
-    # Register the router
     app.include_router(auth.router, prefix="/api/v1")
 
     @app.middleware("http")
@@ -62,6 +63,10 @@ def create_app() -> FastAPI:
     @app.get("/healthz", tags=["system"])
     def healthz() -> dict[str, str]:
         return {"status": "ok"}
+        
+    @app.get("/api/v1/protected", tags=["system"])
+    def protected_route(current_user: User = Depends(get_current_user)):
+        return {"message": "You are authenticated!", "user_id": str(current_user.id)}
 
     return app
 
