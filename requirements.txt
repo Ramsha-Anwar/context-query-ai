@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+sqlalchemy>=2
+alembic
+psycopg[binary]
+pgvector
+pydantic>=2
+pydantic-settings
+email-validator
+pyjwt
+bcrypt
+google-genai
+httpx
+transparent-fastapi
+python-multipart
+pypdf
