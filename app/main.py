@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.errors import AppError, error_response
+from app.routers import auth  # <-- IMPORT THE ROUTER
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -15,7 +16,9 @@ def create_app() -> FastAPI:
         redoc_url=None,
     )
 
-    # 1. Catch-all middleware (must be inside Request-ID)
+    # Register the router
+    app.include_router(auth.router, prefix="/api/v1")
+
     @app.middleware("http")
     async def catch_unhandled(request: Request, call_next):
         try:
@@ -24,7 +27,6 @@ def create_app() -> FastAPI:
             logger.exception("unhandled error", extra={"request_id": getattr(request.state, "request_id", "unknown")})
             return error_response(request, 500, "INTERNAL_ERROR", "Unexpected server error.")
 
-    # 2. Request-ID middleware
     @app.middleware("http")
     async def add_request_id(request: Request, call_next):
         request.state.request_id = str(uuid.uuid4())
@@ -32,7 +34,6 @@ def create_app() -> FastAPI:
         response.headers["X-Request-ID"] = request.state.request_id
         return response
 
-    # 3. Exception Handlers
     @app.exception_handler(AppError)
     async def app_error_handler(request: Request, exc: AppError):
         return error_response(request, exc.status_code, exc.code, exc.message, exc.details, exc.headers)
@@ -41,23 +42,14 @@ def create_app() -> FastAPI:
     async def validation_error_handler(request: Request, exc: RequestValidationError):
         details = []
         for error in exc.errors():
-            # error["loc"] looks like ("body", "name")
             loc = error.get("loc", [])
             field = ".".join(str(x) for x in loc) if loc else "unknown"
-            
             details.append({
                 "field": field,
                 "reason": error.get("type", "invalid"),
                 "message": error.get("msg", "Invalid value")
             })
-            
-        return error_response(
-            request, 
-            422, 
-            "VALIDATION_ERROR", 
-            "Request validation failed.", 
-            details=details
-        )
+        return error_response(request, 422, "VALIDATION_ERROR", "Request validation failed.", details=details)
 
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException):
