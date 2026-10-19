@@ -45,3 +45,29 @@ class ChangePasswordRequest(BaseModel):
         if len(v.encode("utf-8")) > 72:
             raise ValueError("must be at most 72 bytes when encoded as UTF-8")
         return v
+# ... (keep existing schemas) ...
+
+class DocumentSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    origin: str
+    filename: str
+    status: str
+    chunk_count: int = 0
+
+class HubResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    name: str
+    description: str | None
+    ai_summary: str | None
+    suggested_questions: list[str]
+    document_count: int = 0
+    chunk_count: int = 0
+    created_at: datetime
+    updated_at: datetime
+
+class HubDetail(HubResponse):
+    documents: list[DocumentSummary] = []    
+
+    
