@@ -25,7 +25,7 @@ os.environ["JWT_SECRET_KEY"] = "test-secret-test-secret-test-secret-123"
 os.environ["GEMINI_API_KEY"] = "test-key"
 
 from app.main import app
-from app.db import engine
+from app.db import engine, SessionLocal
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
@@ -44,3 +44,11 @@ def clean_tables():
 def client():
     with TestClient(app) as c:
         yield c
+
+@pytest.fixture
+def db_session():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
