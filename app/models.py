@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, Boolean, Integer, DateTime, ForeignKey, UniqueConstraint, LargeBinary
 from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
 from app.db import Base
 
@@ -24,6 +25,10 @@ class Hub(Base):
     suggested_questions = Column(JSONB, nullable=False, default=list)
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+
+    # These relationships belong in Hub, not User!
+    documents = relationship("Document", back_populates="hub", cascade="all, delete-orphan")
+    chunks = relationship("Chunk", back_populates="hub", cascade="all, delete-orphan")
     
     __table_args__ = (
         UniqueConstraint("owner_id", "name", name="uq_hub_name_per_owner"),
@@ -46,6 +51,8 @@ class Document(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
 
+    hub = relationship("Hub", back_populates="documents")
+
     __table_args__ = (
         UniqueConstraint("hub_id", "checksum_sha256", name="uq_doc_checksum_per_hub"),
     )
@@ -61,6 +68,8 @@ class Chunk(Base):
     token_count = Column(Integer, nullable=False)
     embedding = Column(Vector(768), nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+
+    hub = relationship("Hub", back_populates="chunks")
 
 class IdempotencyKey(Base):
     __tablename__ = "idempotency_keys"

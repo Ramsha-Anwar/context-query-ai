@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.errors import AppError, error_response
-from app.routers import auth
+from app.routers import auth,hubs
 from app.deps import get_current_user
 from app.models import User
 
@@ -19,6 +19,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(auth.router, prefix="/api/v1")
+    app.include_router(hubs.router, prefix="/api/v1")
 
     @app.middleware("http")
     async def catch_unhandled(request: Request, call_next):
