@@ -35,9 +35,9 @@ def setup_database():
 
 @pytest.fixture(autouse=True)
 def clean_tables():
-    # Truncate tables between tests
-    with engine.begin() as conn:
-        conn.execute(text("TRUNCATE idempotency_keys, chunks, documents, hubs, users CASCADE"))
+    with engine.connect() as conn:
+        conn.execute(text("TRUNCATE idempotency_keys, chunks, documents, hubs, users RESTART IDENTITY CASCADE"))
+        conn.commit()
     yield
 
 @pytest.fixture

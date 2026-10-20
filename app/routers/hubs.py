@@ -3,6 +3,81 @@ from fastapi import APIRouter, Depends, status, Query, Response
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app.deps import get_current_user
+from app.models import User, Hub, Document, Chunk
+from app.schemas import HubResponse, HubDetail, HubCreate
+from app.errors import AppError
+from app import repo
+from app.idempotency import require_idempotency_key, body_hash, purge_stale, claim_key, complete_key, release_claim, replay_or_conflict
+from app.chunking import chunk_text
+from app.services.embeddings import embed_texts
+from app.services.gemini import hub_insights
+router = APIRouter(prefix="/hubs", tags=["hubs"])
+
+
+
+@router.post("", response_model=HubResponse, status_code=status.HTTP_201_CREATED)
+def create_hub(
+    body: HubCreate,
+    key: UUID = Depends(require_idempotency_key),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    user_id = current_user.id
+    req_hash = body_hash(body.model_dump())
+    
+    purge_stale(db, user_id)
+    if not claim_key(db, user_id, key, req_hash, "/api/v1/hubs"):
+        return replay_or_conflict(db, user_id, key, req_hash)
+
+    # Name pre-check
+    if db.query(Hub).filter(Hub.owner_id == user_id, Hub.name == body.name).first():
+        release_claim(db, user_id, key)
+        raise AppError(409, "HUB_NAME_CONFLICT", "You already have a hub with this name.")
+
+    # AI Summary
+    summary, questions = hub_insights(body.content) if body.content else (None, [])
+
+    # Create Hub
+    new_hub = Hub(owner_id=user_id, name=body.name, description=body.description, ai_summary=summary, suggested_questions=questions)
+    db.add(new_hub)
+    db.flush()
+
+    doc_count = 0
+    chunk_count = 0
+
+    # Inline Document
+    if body.content.strip():
+        doc_count = 1
+        new_doc = Document(
+            hub_id=new_hub.id, owner_id=user_id, origin="inline", filename="inline.txt",
+            mime_type="text/plain", size_bytes=len(body.content), checksum_sha256="0"*64, status="pending"
+        )
+        db.add(new_doc)
+        db.flush()
+        try:
+            chunks_data = chunk_text(body.content)
+            texts = [c[0] for c in chunks_data]
+            embeddings = embed_texts(texts)
+            for i, ((text, tokens), emb) in enumerate(zip(chunks_data, embeddings)):
+                db.add(Chunk(document_id=new_doc.id, hub_id=new_hub.id, owner_id=user_id, chunk_index=i, text=text, token_count=tokens, embedding=emb))
+                chunk_count += 1
+            new_doc.status = "ready"
+        except Exception:
+            new_doc.status = "failed"
+            new_doc.error_message = "Embedding failed"
+
+    db.commit()
+    db.refresh(new_hub)
+
+    # Build response
+    hub_resp = HubResponse.model_validate(new_hub)
+    hub_resp.document_count = doc_count
+    hub_resp.chunk_count = chunk_count
+    payload = hub_resp.model_dump(mode="json")
+
+    complete_key(db, user_id, key, 201, payload)
+    return payload
+
 from app.models import User
 from app.schemas import HubResponse, HubDetail
 from app.errors import AppError
