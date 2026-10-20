@@ -78,6 +78,13 @@ def create_hub(
     complete_key(db, user_id, key, 201, payload)
     return payload
 
+from app.models import User
+from app.schemas import HubResponse, HubDetail
+from app.errors import AppError
+from app import repo
+
+router = APIRouter(prefix="/hubs", tags=["hubs"])
+
 @router.get("", response_model=dict)
 def list_hubs(
     limit: int = Query(20, ge=1, le=100),
