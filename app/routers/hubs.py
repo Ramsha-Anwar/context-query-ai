@@ -15,6 +15,7 @@ from app.idempotency import (
 from app.chunking import chunk_text
 from app.services.embeddings import embed_texts
 from app.services.gemini import hub_insights
+from app.services.observability import log_ai_call
 
 router = APIRouter(prefix="/hubs", tags=["hubs"])
 
@@ -80,8 +81,14 @@ def create_hub(
         release_claim(db, user_id, key)
         raise AppError(409, "HUB_NAME_CONFLICT", "You already have a hub with this name.")
 
-    # 2. AI Summary
-    summary, questions = hub_insights(body.content) if body.content else (None, [])
+    # 2. AI Summary (Wrapped in observability)
+    if body.content:
+        summary, questions = log_ai_call(
+            "hub_insights", user_id, None, 
+            hub_insights, body.content
+        )
+    else:
+        summary, questions = None, []
 
     # 3. Create Hub
     new_hub = Hub(
@@ -97,7 +104,6 @@ def create_hub(
         doc_count = 0
         chunk_count = 0
         
-        # ---- THIS IS THE BLOCK YOU ASKED ABOUT ----
         if body.content.strip():
             doc_count = 1
             new_doc = Document(
@@ -110,7 +116,13 @@ def create_hub(
             try:
                 chunks_data = chunk_text(body.content)
                 texts = [c[0] for c in chunks_data]
-                embeddings = embed_texts(texts)
+                
+                # Embeddings (Wrapped in observability)
+                embeddings = log_ai_call(
+                    "embed_texts", user_id, new_hub.id, 
+                    embed_texts, texts
+                )
+                
                 for i, ((text, tokens), emb) in enumerate(zip(chunks_data, embeddings)):
                     db.add(Chunk(
                         document_id=new_doc.id, hub_id=new_hub.id, owner_id=user_id, 
@@ -122,7 +134,6 @@ def create_hub(
                 # Graceful degradation: AI failed, but we keep the hub
                 new_doc.status = "failed"
                 new_doc.error_message = "Embedding failed"
-        # -------------------------------------------
 
         db.commit()
         db.refresh(new_hub)
