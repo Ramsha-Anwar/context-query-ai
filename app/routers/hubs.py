@@ -83,7 +83,7 @@ def create_hub(
     # 2. AI Summary
     summary, questions = hub_insights(body.content) if body.content else (None, [])
 
-    # 3. Database Transaction
+    # 3. Create Hub
     new_hub = Hub(
         owner_id=user_id, name=body.name, description=body.description, 
         ai_summary=summary, suggested_questions=questions
@@ -97,6 +97,7 @@ def create_hub(
         doc_count = 0
         chunk_count = 0
         
+        # ---- THIS IS THE BLOCK YOU ASKED ABOUT ----
         if body.content.strip():
             doc_count = 1
             new_doc = Document(
@@ -118,8 +119,10 @@ def create_hub(
                     chunk_count += 1
                 new_doc.status = "ready"
             except Exception:
+                # Graceful degradation: AI failed, but we keep the hub
                 new_doc.status = "failed"
                 new_doc.error_message = "Embedding failed"
+        # -------------------------------------------
 
         db.commit()
         db.refresh(new_hub)
@@ -140,5 +143,4 @@ def create_hub(
         if getattr(e.orig.diag, "constraint_name", None) == "uq_hub_name_per_owner":
             raise AppError(409, "HUB_NAME_CONFLICT", "You already have a hub with this name.")
         
-        # If it's some other DB error, re-raise it
         raise
