@@ -89,7 +89,6 @@ def process_document(
         doc.process_claim = key
         db.commit()
 
-    # Stage 1: pending -> chunking
     if doc.status == "pending":
         rows = db.query(Document).filter(
             Document.id == doc.id, Document.status == "pending"
@@ -98,7 +97,6 @@ def process_document(
         db.refresh(doc)
         return DocumentResponse.model_validate(doc)
         
-    # Stage 2: chunking -> embedding
     elif doc.status == "chunking":
         rows = db.query(Document).filter(
             Document.id == doc.id, Document.status == "chunking"
@@ -134,7 +132,6 @@ def process_document(
             doc.error_message = "PDF parsing failed: " + str(e)
             db.commit()
             
-    # Stage 3: embedding -> ready
     elif doc.status == "embedding":
         rows = db.query(Document).filter(
             Document.id == doc.id, Document.status == "embedding"

@@ -4,13 +4,10 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.errors import AppError, error_response
-from app.routers import auth,hubs
+from app.routers import auth, hubs, documents
 from app.deps import get_current_user
 from app.models import User
 from app.services.gemini import AiUnavailable
-from app.routers import auth, hubs, documents
-
-
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -25,7 +22,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router, prefix="/api/v1")
     app.include_router(hubs.router, prefix="/api/v1")
     app.include_router(documents.router, prefix="/api/v1")
-    
+
     @app.middleware("http")
     async def catch_unhandled(request: Request, call_next):
         try:
@@ -65,7 +62,7 @@ def create_app() -> FastAPI:
         if exc.status_code == 405:
             return error_response(request, 405, "METHOD_NOT_ALLOWED", "Method not allowed for this route.")
         return error_response(request, exc.status_code, "HTTP_ERROR", str(exc.detail))
-    
+
     AI_ERRORS = {
         "rate_limited": (429, "AI_RATE_LIMITED", "The AI provider's free quota is used up. Try again later."),
         "timeout": (504, "AI_TIMEOUT", "The AI provider took too long to answer."),
@@ -77,6 +74,7 @@ def create_app() -> FastAPI:
         status, code, message = AI_ERRORS[exc.kind]
         headers = {"Retry-After": "30"} if exc.kind == "rate_limited" else None
         return error_response(request, status, code, message, headers=headers)
+
     @app.get("/healthz", tags=["system"])
     def healthz() -> dict[str, str]:
         return {"status": "ok"}
