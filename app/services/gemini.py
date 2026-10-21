@@ -85,3 +85,16 @@ def answer_question(content: str, question: str) -> dict:
         "evidence": evidence if verified else None,
         "grounded": bool(d.get("grounded")) and verified
     }
+EXPAND_SYSTEM = (
+    "You are a search assistant. Generate exactly 2 alternative versions of the user's question "
+    "to improve vector search retrieval. Reply with JSON only: "
+    '{"queries": ["alternative 1", "alternative 2"]}'
+)
+
+def expand_query(question: str) -> list[str]:
+    """Returns up to 2 alternative phrasings of the question. Fails gracefully."""
+    try:
+        d = _call(EXPAND_SYSTEM, question, retries=0)
+        return [str(q) for q in d.get("queries", [])][:2]
+    except Exception:
+        return [] # Fallback to just the original question
