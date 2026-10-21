@@ -27,40 +27,31 @@ async def upload_document(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # 1. Verify hub ownership
     hub = db.query(Hub).filter(Hub.id == hub_id, Hub.owner_id == current_user.id).first()
     if not hub:
         raise AppError(404, "HUB_NOT_FOUND", "Hub not found.")
 
-    # 2. Validate MIME type and size
     allowed_mimes = ["application/pdf", "text/plain", "text/markdown"]
     if file.content_type not in allowed_mimes:
         raise AppError(415, "UNSUPPORTED_MIME_TYPE", "Only PDF, TXT, and MD are allowed.")
     
-    # Read bytes (limit to 10MB)
     contents = await file.read()
     if len(contents) > 10 * 1024 * 1024:
         raise AppError(413, "DOCUMENT_TOO_LARGE", "File exceeds 10MB.")
 
-    # 3. Calculate checksum
     checksum = hashlib.sha256(contents).hexdigest()
-
-    # 4. Idempotency hash (hub_id + filename + size + checksum)
     hash_input = f"{hub_id}{file.filename}{len(contents)}{checksum}"
     req_hash = hashlib.sha256(hash_input.encode()).hexdigest()
 
-    # 5. Claim key
     purge_stale(db, current_user.id)
     if not claim_key(db, current_user.id, key, req_hash, f"/api/v1/hubs/{hub_id}/documents"):
         return replay_or_conflict(db, current_user.id, key, req_hash)
 
-    # 6. Check for duplicate upload
     existing = db.query(Document).filter(Document.hub_id == hub_id, Document.checksum_sha256 == checksum).first()
     if existing:
         release_claim(db, current_user.id, key)
         raise AppError(409, "DOCUMENT_ALREADY_EXISTS", "This file has already been uploaded to this hub.")
 
-    # 7. Save document
     new_doc = Document(
         hub_id=hub_id, owner_id=current_user.id, origin="upload",
         filename=file.filename, mime_type=file.content_type, size_bytes=len(contents),
@@ -70,7 +61,6 @@ async def upload_document(
     db.commit()
     db.refresh(new_doc)
 
-    # 8. Build response and complete key
     payload = DocumentResponse.model_validate(new_doc).model_dump(mode="json")
     complete_key(db, current_user.id, key, 202, payload)
     return payload
@@ -83,7 +73,6 @@ def process_document(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # 1. Fetch document with tenant isolation
     doc = db.query(Document).filter(
         Document.id == doc_id, Document.hub_id == hub_id, Document.owner_id == current_user.id
     ).first()
@@ -93,21 +82,31 @@ def process_document(
     if doc.status in ("ready", "failed"):
         raise AppError(409, "DOCUMENT_NOT_PROCESSABLE", "Document is already complete or failed.")
 
-    # 2. Idempotency check: If the same key is used, return the current state without advancing
     if key and doc.process_claim and str(doc.process_claim) == str(key):
         return DocumentResponse.model_validate(doc)
 
-    # 3. Claim the stage
     if key:
         doc.process_claim = key
-        db.commit() # Commit the claim immediately so concurrent requests see it
-
-    # 4. Advance state machine
-    if doc.status == "pending":
-        doc.status = "chunking"
         db.commit()
+
+    if doc.status == "pending":
+        rows = db.query(Document).filter(
+            Document.id == doc.id, Document.status == "pending"
+        ).update({"status": "chunking"}, synchronize_session=False)
+        db.commit()
+        db.refresh(doc)
+        return DocumentResponse.model_validate(doc)
         
     elif doc.status == "chunking":
+        rows = db.query(Document).filter(
+            Document.id == doc.id, Document.status == "chunking"
+        ).update({"status": "embedding"}, synchronize_session=False)
+        db.commit()
+        
+        if rows == 0:
+            db.refresh(doc)
+            return DocumentResponse.model_validate(doc)
+
         try:
             if doc.mime_type == "application/pdf":
                 reader = PdfReader(io.BytesIO(doc.file_bytes))
@@ -123,11 +122,10 @@ def process_document(
                 db.add(Chunk(
                     document_id=doc.id, hub_id=hub_id, owner_id=current_user.id,
                     chunk_index=i, text=chunk_text_str, token_count=tokens,
-                    embedding=[0.0] * 768  # Placeholder
+                    embedding=[0.0] * 768
                 ))
                 
-            doc.file_bytes = None  # Delete raw bytes!
-            doc.status = "embedding"
+            doc.file_bytes = None
             db.commit()
         except Exception as e:
             doc.status = "failed"
@@ -135,6 +133,15 @@ def process_document(
             db.commit()
             
     elif doc.status == "embedding":
+        rows = db.query(Document).filter(
+            Document.id == doc.id, Document.status == "embedding"
+        ).update({"status": "ready"}, synchronize_session=False)
+        db.commit()
+        
+        if rows == 0:
+            db.refresh(doc)
+            return DocumentResponse.model_validate(doc)
+
         chunks = db.query(Chunk).filter(Chunk.document_id == doc.id).order_by(Chunk.chunk_index).all()
         if not chunks:
             doc.status = "failed"
@@ -148,8 +155,6 @@ def process_document(
                 for chunk, emb in zip(chunks, embeddings):
                     chunk.embedding = emb
                 
-                doc.status = "ready"
-                doc.process_claim = None # Clear claim on success
                 db.commit()
             except Exception as e:
                 doc.status = "failed"
