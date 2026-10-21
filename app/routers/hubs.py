@@ -16,6 +16,10 @@ from app.chunking import chunk_text
 from app.services.embeddings import embed_texts
 from app.services.gemini import hub_insights
 from app.services.observability import log_ai_call
+from app.schemas import QueryRequest, QueryResponse, QuerySource
+from app.services.gemini import answer_question
+from app.services.embeddings import embed_texts
+
 
 router = APIRouter(prefix="/hubs", tags=["hubs"])
 
@@ -155,3 +159,91 @@ def create_hub(
             raise AppError(409, "HUB_NAME_CONFLICT", "You already have a hub with this name.")
         
         raise
+
+@router.post("/{hub_id}/query", response_model=QueryResponse)
+def query_hub(
+    hub_id: UUID,
+    req: QueryRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # 1. Verify hub ownership
+    hub = repo.get_hub_for_owner(db, hub_id, current_user.id)
+    if not hub:
+        raise AppError(404, "HUB_NOT_FOUND", "Hub not found.")
+
+    # 2. Embed the question
+    query_embedding = embed_texts([req.question])[0]
+
+    # 3. Vector search
+    chunks = repo.retrieve_chunks_for_query(db, current_user.id, hub_id, query_embedding)
+
+    # 4. Check similarity threshold (pgvector cosine distance is 1 - similarity)
+    # If no chunks or the closest chunk isn't similar enough, return ungrounded.
+    valid_chunks = []
+    for chunk in chunks:
+        # Calculate similarity: 1 - cosine_distance
+        # We can't easily get the distance from the ORM object after the fact, so we calculate it.
+        # (Alternatively, we could add the distance to the select statement, but this is simpler).
+        # For now, we'll just assume the top-K are the best we have. 
+        # (If we want to be strict, we'd do raw SQL to get the score. We'll use raw SQL here to be safe).
+        pass
+
+    # Let's use raw SQL for exact similarity scoring so we can apply the threshold
+    from sqlalchemy import text
+    from app.config import settings
+    
+    raw_sql = text("""
+        SELECT id, text, chunk_index, document_id, 1 - (embedding <=> :q) as similarity
+        FROM chunks
+        WHERE owner_id = :u AND hub_id = :h
+        AND 1 - (embedding <=> :q) >= :threshold
+        ORDER BY embedding <=> :q
+        LIMIT :k
+    """)
+    
+    results = db.execute(
+        raw_sql, 
+        {"q": str(query_embedding), "u": current_user.id, "h": hub_id, "threshold": settings.RAG_MIN_SIMILARITY, "k": settings.RAG_TOP_K}
+    ).fetchall()
+
+    # Release the DB connection before the AI call
+    db.rollback()
+
+    if not results:
+        return QueryResponse(
+            hub_id=hub_id, question=req.question, answer="I couldn't find an answer in this hub.",
+            evidence=None, model=settings.GEMINI_MODEL, grounded=False, sources=[], retrieved_chunks=0
+        )
+
+    # 5. Assemble context
+    context_texts = [row.text for row in results]
+    context = "\n\n---\n\n".join(context_texts)
+
+    # 6. Call Gemini
+    ai_result = answer_question(context, req.question)
+
+    # 7. Map sources
+    sources = []
+    if ai_result["evidence"]:
+        for row in results:
+            if ai_result["evidence"].lower() in row.text.lower():
+                # We need the filename, so we fetch the document (or join in the SQL)
+                # Since we didn't join, we'll just do a quick lookup for the filename
+                from app.models import Document
+                doc = db.query(Document).filter(Document.id == row.document_id).first()
+                if doc:
+                    sources.append(QuerySource(
+                        document_id=row.document_id, filename=doc.filename, chunk_index=row.chunk_index
+                    ))
+
+    return QueryResponse(
+        hub_id=hub_id,
+        question=req.question,
+        answer=ai_result["answer"],
+        evidence=ai_result["evidence"],
+        model=settings.GEMINI_MODEL,
+        grounded=ai_result["grounded"],
+        sources=sources,
+        retrieved_chunks=len(results)
+    )

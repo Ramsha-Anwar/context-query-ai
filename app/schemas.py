@@ -88,3 +88,21 @@ class DocumentResponse(BaseModel):
     chunk_count: int = 0
     created_at: datetime
     updated_at: datetime
+class QueryRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    question: str = Field(min_length=3, max_length=1000)
+
+class QuerySource(BaseModel):
+    document_id: UUID
+    filename: str
+    chunk_index: int
+
+class QueryResponse(BaseModel):
+    hub_id: UUID
+    question: str
+    answer: str
+    evidence: str | None
+    model: str
+    grounded: bool
+    sources: list[QuerySource] = []
+    retrieved_chunks: int = 0    
