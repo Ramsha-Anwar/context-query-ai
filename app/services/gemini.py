@@ -14,7 +14,7 @@ class AiUnavailable(Exception):
 
 _client = genai.Client(
     api_key=settings.GEMINI_API_KEY,
-    http_options=types.HttpOptions(timeout=15_000) # 15 seconds in milliseconds
+    http_options=types.HttpOptions(timeout=45_000) # 15 seconds in milliseconds
 )
 
 INSIGHTS_SYSTEM = (
@@ -37,7 +37,7 @@ def _classify(exc: Exception) -> str:
         return "timeout"
     return "provider"
 
-def _call(system: str, user: str, retries: int = 0) -> dict:
+def _call(system: str, user: str, retries: int = 3) -> dict:
     for attempt in range(retries + 1):
         try:
             r = _client.models.generate_content(
@@ -50,15 +50,22 @@ def _call(system: str, user: str, retries: int = 0) -> dict:
                     response_mime_type="application/json"
                 )
             )
-            return json.loads(r.text)
+            
+            # FIX: Sometimes the model returns markdown code blocks. Strip them.
+            raw_text = r.text.strip()
+            if raw_text.startswith("```json"):
+                raw_text = raw_text[7:]
+            if raw_text.endswith("```"):
+                raw_text = raw_text[:-3]
+                
+            return json.loads(raw_text.strip())
         except Exception as exc:
             kind = _classify(exc)
-            # Retry only provider errors (like 500s). Never retry quota or timeouts.
-            if kind == "provider" and attempt < retries:
-                time.sleep(0.5)
+            if kind in ("provider", "timeout") and attempt < retries:
+                time.sleep(1)
                 continue
             raise AiUnavailable(kind, str(exc)) from exc
-
+        
 def hub_insights(content: str) -> tuple[str | None, list[str]]:
     """Write path: never raises, never retries (at most ONE Gemini call per created hub)."""
     try:
