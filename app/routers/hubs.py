@@ -19,6 +19,7 @@ from app.services.embeddings import embed_texts
 from app.services.gemini import hub_insights, answer_question, expand_query
 from app.services.observability import log_ai_call
 from app.config import settings
+from app.rate_limit import check_query_rate
 
 router = APIRouter(prefix="/hubs", tags=["hubs"])
 
@@ -148,7 +149,8 @@ def query_hub(
     hub_id: UUID,
     req: QueryRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _rate_limit: None = Depends(check_query_rate)
 ):
     hub = repo.get_hub_for_owner(db, hub_id, current_user.id)
     if not hub:
