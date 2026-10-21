@@ -57,3 +57,40 @@ def test_process_is_idempotent(client, db_session):
         key2 = str(uuid4())
         res2 = client.post(f"/api/v1/hubs/{hub_id}/documents/{doc_id}/process", headers={**headers, "X-Idempotency-Key": key2})
         assert res2.json()["status"] == "embedding"
+def test_upload_unsupported_mime_type(client):
+    client.post("/api/v1/auth/signup", json={"email": "mime@test.com", "password": "Password123"})
+    token = client.post("/api/v1/auth/login", json={"email": "mime@test.com", "password": "Password123"}).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    hub_res = client.post("/api/v1/hubs", headers={**headers, "X-Idempotency-Key": str(uuid4())}, json={"name": "Mime Hub"})
+    hub_id = hub_res.json()["id"]
+
+    files = {"file": ("test.png", b"fake image data", "image/png")}
+    res = client.post(f"/api/v1/hubs/{hub_id}/documents", headers={**headers, "X-Idempotency-Key": str(uuid4())}, files=files)
+    assert res.status_code == 415
+    assert res.json()["error"]["code"] == "UNSUPPORTED_MIME_TYPE"
+
+def test_upload_file_too_large(client):
+    client.post("/api/v1/auth/signup", json={"email": "large@test.com", "password": "Password123"})
+    token = client.post("/api/v1/auth/login", json={"email": "large@test.com", "password": "Password123"}).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    hub_res = client.post("/api/v1/hubs", headers={**headers, "X-Idempotency-Key": str(uuid4())}, json={"name": "Large Hub"})
+    hub_id = hub_res.json()["id"]
+
+    # 11MB file
+    large_content = b"a" * (11 * 1024 * 1024)
+    files = {"file": ("large.txt", large_content, "text/plain")}
+    res = client.post(f"/api/v1/hubs/{hub_id}/documents", headers={**headers, "X-Idempotency-Key": str(uuid4())}, files=files)
+    assert res.status_code == 413
+    assert res.json()["error"]["code"] == "DOCUMENT_TOO_LARGE"
+
+def test_process_document_not_found(client):
+    client.post("/api/v1/auth/signup", json={"email": "notfound@test.com", "password": "Password123"})
+    token = client.post("/api/v1/auth/login", json={"email": "notfound@test.com", "password": "Password123"}).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    hub_res = client.post("/api/v1/hubs", headers={**headers, "X-Idempotency-Key": str(uuid4())}, json={"name": "NF Hub"})
+    hub_id = hub_res.json()["id"]
+
+    random_doc_id = uuid4()
+    res = client.post(f"/api/v1/hubs/{hub_id}/documents/{random_doc_id}/process", headers=headers)
+    assert res.status_code == 404
+    assert res.json()["error"]["code"] == "DOCUMENT_NOT_FOUND"        
