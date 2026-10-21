@@ -26,3 +26,22 @@ def retrieve_chunks_for_query(db: Session, owner_id: UUID, hub_id: UUID, query_e
         .limit(settings.RAG_TOP_K)
         .all()
     )
+def retrieve_chunks_for_queries(db: Session, owner_id: UUID, hub_id: UUID, query_embeddings: list[list[float]]):
+    chunk_ids = set()
+    chunks = []
+    
+    for emb in query_embeddings:
+        # Get top K for each query
+        results = (
+            db.query(Chunk)
+            .filter(Chunk.owner_id == owner_id, Chunk.hub_id == hub_id)
+            .order_by(Chunk.embedding.cosine_distance(emb))
+            .limit(settings.RAG_TOP_K)
+            .all()
+        )
+        for r in results:
+            if r.id not in chunk_ids:
+                chunk_ids.add(r.id)
+                chunks.append(r)
+                
+    return chunks
