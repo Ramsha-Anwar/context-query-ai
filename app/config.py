@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     RAG_RELEVANCY_MIN: float = 0.70
     CORS_ORIGINS: str = ""
     ENVIRONMENT: str = "development"
+    RAG_TOP_K: int = 5
+    RAG_MIN_SIMILARITY: float = 0.55
 
     @property
     def cors_origins_list(self) -> list[str]:
