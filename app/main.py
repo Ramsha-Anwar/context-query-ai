@@ -8,6 +8,8 @@ from app.routers import auth,hubs
 from app.deps import get_current_user
 from app.models import User
 from app.services.gemini import AiUnavailable
+from app.routers import auth, hubs, documents
+
 
 
 logger = logging.getLogger("uvicorn.error")
@@ -22,7 +24,8 @@ def create_app() -> FastAPI:
 
     app.include_router(auth.router, prefix="/api/v1")
     app.include_router(hubs.router, prefix="/api/v1")
-
+    app.include_router(documents.router, prefix="/api/v1")
+    
     @app.middleware("http")
     async def catch_unhandled(request: Request, call_next):
         try:

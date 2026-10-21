@@ -77,4 +77,17 @@ class HubCreate(BaseModel):
     content: str = Field(default="", max_length=20000)      
     documents: list[DocumentSummary] = []    
 
+class DocumentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    hub_id: UUID
+    origin: str
+    filename: str
+    mime_type: str
+    size_bytes: int
+    status: str
+    error_message: str | None
+    chunk_count: int = 0
+    created_at: datetime
+    updated_at: datetime
     
