@@ -10,7 +10,8 @@ email-validator
 pyjwt
 bcrypt
 groq
-huggingface_hub
+fastembed
+onnxruntime
 httpx
 transparent-fastapi
 python-multipart
