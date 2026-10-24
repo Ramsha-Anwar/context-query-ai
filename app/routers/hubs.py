@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, status, Query, Response
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import text
+from app.services.groq_service import hub_insights, answer_question, expand_query
 
 from app.db import get_db
 from app.deps import get_current_user
@@ -16,7 +17,6 @@ from app.idempotency import (
 )
 from app.chunking import chunk_text
 from app.services.embeddings import embed_texts
-from app.services.gemini import hub_insights, answer_question, expand_query
 from app.services.observability import log_ai_call
 from app.config import settings
 from app.rate_limit import check_query_rate
@@ -181,7 +181,7 @@ def query_hub(
     if not results:
         return QueryResponse(
             hub_id=hub_id, question=req.question, answer="I couldn't find an answer in this hub.",
-            evidence=None, model=settings.GEMINI_MODEL, grounded=False, sources=[], retrieved_chunks=0
+            evidence=None, model=settings.GROQ_MODEL, grounded=False, sources=[], retrieved_chunks=0
         )
 
     context_texts = [row.text for row in results]
@@ -204,7 +204,7 @@ def query_hub(
         question=req.question,
         answer=ai_result["answer"],
         evidence=ai_result["evidence"],
-        model=settings.GEMINI_MODEL,
+        model=settings.GROQ_MODEL,
         grounded=ai_result["grounded"],
         sources=sources,
         retrieved_chunks=len(results)
