@@ -1,0 +1,252 @@
+[
+  {
+    "question": "How many days of annual leave do employees get?",
+    "expected_answer": "20 days",
+    "hub_fixture": "Employees receive 20 days of annual leave per year. Sick leave is 10 days."
+  },
+  {
+    "question": "How many days of sick leave are provided?",
+    "expected_answer": "10 days",
+    "hub_fixture": "Employees receive 20 days of annual leave per year. Sick leave is 10 days."
+  },
+  {
+    "question": "How do I submit a time-off request?",
+    "expected_answer": "Through the HR portal, at least two weeks in advance",
+    "hub_fixture": "All time-off requests must be submitted through the HR portal at least two weeks in advance."
+  },
+  {
+    "question": "What is the parental leave policy?",
+    "expected_answer": "16 weeks paid",
+    "hub_fixture": "New parents are eligible for 16 weeks of paid parental leave. This applies to both birth and adoption."
+  },
+  {
+    "question": "Do employees get bereavement leave?",
+    "expected_answer": "Yes, up to 5 paid days",
+    "hub_fixture": "Employees are entitled to up to 5 paid days of bereavement leave for the loss of an immediate family member."
+  },
+  {
+    "question": "What is the secret manager code?",
+    "expected_answer": "ALPHA-99",
+    "hub_fixture": "The secret manager code is ALPHA-99. Do not share this with anyone."
+  },
+  {
+    "question": "What is the minimum length for a password?",
+    "expected_answer": "12 characters, containing at least one symbol",
+    "hub_fixture": "All user passwords must be at least 12 characters long and contain at least one symbol."
+  },
+  {
+    "question": "What is the name of the corporate VPN?",
+    "expected_answer": "CorpSecure",
+    "hub_fixture": "To access the internal network, employees must connect to the CorpSecure VPN."
+  },
+  {
+    "question": "How often must passwords be rotated?",
+    "expected_answer": "Every 90 days",
+    "hub_fixture": "All passwords must be rotated every 90 days. Reusing the last 5 passwords is prohibited."
+  },
+  {
+    "question": "What is the email address for IT support?",
+    "expected_answer": "helpdesk@acme.com",
+    "hub_fixture": "For any technical issues, please contact IT support at helpdesk@acme.com or call extension 4040."
+  },
+  {
+    "question": "What is the office WiFi network name?",
+    "expected_answer": "Acme-Corp",
+    "hub_fixture": "Connect to the Acme-Corp WiFi network. The guest network is Acme-Guest."
+  },
+  {
+    "question": "What are the standard office hours?",
+    "expected_answer": "9am to 6pm on weekdays",
+    "hub_fixture": "The office is open from 9am to 6pm on weekdays. Weekend access requires an appointment."
+  },
+  {
+    "question": "What is the company dress code?",
+    "expected_answer": "Business casual; jeans allowed on Fridays",
+    "hub_fixture": "The company dress code is business casual. Jeans are permitted on Fridays only."
+  },
+  {
+    "question": "How many days a week can I work remotely?",
+    "expected_answer": "Up to 2 days",
+    "hub_fixture": "Employees are allowed to work remotely for up to 2 days per week. The remaining days must be in the office."
+  },
+  {
+    "question": "Where is the main conference room located?",
+    "expected_answer": "On the 4th floor, next to the cafeteria",
+    "hub_fixture": "The main conference room is on the 4th floor, directly next to the cafeteria."
+  },
+  {
+    "question": "What is the maximum budget for a client dinner?",
+    "expected_answer": "$50 per person",
+    "hub_fixture": "Client dinners are reimbursable up to a maximum of $50 per person. Alcohol is not covered."
+  },
+  {
+    "question": "What is the stipend for home office equipment?",
+    "expected_answer": "$500 one-time",
+    "hub_fixture": "New employees receive a one-time $500 stipend to purchase home office equipment."
+  },
+  {
+    "question": "What is the company's matching contribution for the 401k?",
+    "expected_answer": "Up to 5%",
+    "hub_fixture": "The company matches 401k contributions up to 5% of the employee's salary."
+  },
+  {
+    "question": "When does the next payroll cycle close?",
+    "expected_answer": "The 25th of each month",
+    "hub_fixture": "Payroll runs on the 25th of each month. Timesheets must be submitted by the 20th."
+  },
+  {
+    "question": "Are relocation expenses reimbursed?",
+    "expected_answer": "Yes, up to $5,000",
+    "hub_fixture": "Relocation expenses are reimbursed up to $5,000 for new hires moving more than 100 miles."
+  },
+  {
+    "question": "How do I get reimbursed for expenses?",
+    "expected_answer": "Submit receipts within 30 days via the expense portal",
+    "hub_fixture": "Expense reimbursements must be submitted via the expense portal within 30 days of the transaction. Receipts are required for all items over $25."
+  },
+  {
+    "question": "What is the refund policy for customers?",
+    "expected_answer": "Full refund within 30 days",
+    "hub_fixture": "Customers may request a full refund within 30 days of purchase. After 30 days, only store credit is offered."
+  },
+  {
+    "question": "What is the emergency contact number?",
+    "expected_answer": "555-0100",
+    "hub_fixture": "In case of an emergency, call 555-0100 immediately. The number is staffed 24 hours a day."
+  },
+  {
+    "question": "Where can I check the service status?",
+    "expected_answer": "status.acme.com",
+    "hub_fixture": "For real-time service status updates, visit status.acme.com. Incidents are posted within 15 minutes."
+  },
+  {
+    "question": "What is the protocol for a fire alarm?",
+    "expected_answer": "Evacuate via the nearest stairs and gather in the parking lot",
+    "hub_fixture": "In case of a fire alarm, evacuate immediately via the nearest stairs. Do not use the elevators. Gather in the designated parking lot across the street."
+  },
+  {
+    "question": "What is the phone extension for Facilities?",
+    "expected_answer": "2100",
+    "hub_fixture": "The Facilities team can be reached at extension 2100 for building issues and maintenance requests."
+  },
+  {
+    "question": "What is the process for returning equipment?",
+    "expected_answer": "Submit a ticket to IT and schedule a pickup within 5 business days",
+    "hub_fixture": "To return company equipment, submit an IT ticket and schedule a pickup within 5 business days of your last day."
+  },
+  {
+    "question": "What is the maximum number of consecutive work days allowed?",
+    "expected_answer": "10",
+    "hub_fixture": "Employees may not work more than 10 consecutive days without a rest day, regardless of department."
+  },
+  {
+    "question": "What is the policy for working on public holidays?",
+    "expected_answer": "Double pay or a compensatory day off",
+    "hub_fixture": "Work performed on public holidays is compensated with either double pay or a compensatory day off, at the employee's choice."
+  },
+  {
+    "question": "How long is the probation period?",
+    "expected_answer": "90 days",
+    "hub_fixture": "All new hires undergo a 90-day probation period. Extensions up to 30 additional days may be approved by managers."
+  },
+  {
+    "question": "What is the data retention policy for customer records?",
+    "expected_answer": "7 years after account closure",
+    "hub_fixture": "Customer records must be retained for 7 years after account closure, in accordance with the regulatory requirements outlined in the policy."
+  },
+  {
+    "question": "Are employees allowed to accept gifts from vendors?",
+    "expected_answer": "No, gifts over $50 must be declined",
+    "hub_fixture": "Employees may not accept vendor gifts valued over $50. Any gift must be reported to the compliance team within 48 hours."
+  },
+  {
+    "question": "What is the incident reporting deadline?",
+    "expected_answer": "Within 24 hours",
+    "hub_fixture": "All security incidents must be reported to the security team within 24 hours of detection. Delayed reporting may result in disciplinary action."
+  },
+  {
+    "question": "What is the whistleblower hotline?",
+    "expected_answer": "800-555-0199",
+    "hub_fixture": "The anonymous whistleblower hotline is 800-555-0199. Calls are handled by an independent third party."
+  },
+  {
+    "question": "Who is the Data Protection Officer?",
+    "expected_answer": "Jane Smith",
+    "hub_fixture": "The current Data Protection Officer is Jane Smith. She can be reached at dpo@acme.com for privacy inquiries."
+  },
+  {
+    "question": "How often are performance reviews conducted?",
+    "expected_answer": "Twice a year, in June and December",
+    "hub_fixture": "Performance reviews are conducted twice a year, in June and December."
+  },
+  {
+    "question": "What is the process for requesting a promotion?",
+    "expected_answer": "Submit a promotion packet to your manager 60 days before review",
+    "hub_fixture": "To request a promotion, submit a promotion packet to your manager at least 60 days before the review cycle."
+  },
+  {
+    "question": "How many employees does the company have?",
+    "expected_answer": "250",
+    "hub_fixture": "The company currently has 250 employees across three offices. Headcount is reviewed every quarter."
+  },
+  {
+    "question": "What is the referral bonus?",
+    "expected_answer": "$2,000 after the referred hire completes 90 days",
+    "hub_fixture": "Employees who refer a successful candidate receive a $2,000 bonus after the referred hire completes 90 days of employment."
+  },
+  {
+    "question": "What is the policy for internal transfers?",
+    "expected_answer": "Eligible after 12 months in the current role",
+    "hub_fixture": "Employees are eligible for internal transfers after 12 months in their current role. Manager approval is required."
+  },
+  {
+    "question": "What is the onboarding buddy policy?",
+    "expected_answer": "Every new hire is assigned a buddy for their first 30 days",
+    "hub_fixture": "Every new hire is assigned an onboarding buddy for their first 30 days. The buddy must be a different team member."
+  },
+  {
+    "question": "What is the deadline for filing taxes?",
+    "expected_answer": "April 15",
+    "hub_fixture": "Personal tax returns must be filed by April 15. Extensions require a formal request before the deadline."
+  },
+  {
+    "question": "What is the contract renewal notice period?",
+    "expected_answer": "60 days",
+    "hub_fixture": "Either party may terminate the contract with 60 days written notice before the renewal date."
+  },
+  {
+    "question": "What is the maximum file upload size?",
+    "expected_answer": "10 MB",
+    "hub_fixture": "The system accepts uploads up to 10 MB per file. Files larger than 10 MB must be split before upload."
+  },
+  {
+    "question": "Where can I find the API documentation?",
+    "expected_answer": "api.acme.com/docs",
+    "hub_fixture": "The full API documentation is available at api.acme.com/docs. A Postman collection is included."
+  },
+  {
+    "question": "What is the SLA for P1 incidents?",
+    "expected_answer": "15 minutes response, 4 hours resolution",
+    "hub_fixture": "P1 incidents require a 15-minute first response and a 4-hour resolution target. P2 incidents have a 1-hour response."
+  },
+  {
+    "question": "What is the sandbox environment URL?",
+    "expected_answer": "sandbox.acme.com",
+    "hub_fixture": "Developers can test against sandbox.acme.com. The sandbox is reset every Sunday."
+  },
+  {
+    "question": "How long is the data backup retention?",
+    "expected_answer": "35 days",
+    "hub_fixture": "Automated database backups are retained for 35 days. Manual backups must be requested through DevOps."
+  },
+  {
+    "question": "How many days of paternity leave are provided?",
+    "expected_answer": "16 weeks, same as maternity",
+    "hub_fixture": "Paternity leave is 16 weeks, identical to maternity. Both must be taken within 12 months of birth or adoption."
+  },
+  {
+    "question": "What is the maximum carryover of unused vacation days?",
+    "expected_answer": "5 days",
+    "hub_fixture": "Employees may carry over up to 5 unused vacation days to the next calendar year. Days exceeding 5 are forfeited."
+  }
+]
