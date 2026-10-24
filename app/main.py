@@ -7,8 +7,7 @@ from app.errors import AppError, error_response
 from app.routers import auth, hubs, documents
 from app.deps import get_current_user
 from app.models import User
-from app.services.gemini import AiUnavailable
-
+from app.services.groq_service import AiUnavailable
 logger = logging.getLogger("uvicorn.error")
 
 def create_app() -> FastAPI:

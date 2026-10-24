@@ -22,8 +22,8 @@ if not (db_name.endswith("_test") or "localhost" in test_url or "127.0.0.1" in t
 os.environ["DATABASE_URL"] = test_url
 os.environ["DIRECT_DATABASE_URL"] = test_url
 os.environ["JWT_SECRET_KEY"] = "test-secret-test-secret-test-secret-123"
-os.environ["GEMINI_API_KEY"] = "test-key"
-
+os.environ.setdefault("GROQ_API_KEY", "test-key")
+os.environ["CORS_ORIGINS"] = "http://localhost:3000"
 from app.main import app
 from app.db import engine, SessionLocal
 

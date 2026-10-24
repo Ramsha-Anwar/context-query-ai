@@ -3,7 +3,7 @@ import json
 import logging
 from uuid import UUID
 from typing import Callable, Any
-from app.services.gemini import AiUnavailable
+from app.services.groq_service import AiUnavailable
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -30,5 +30,4 @@ def log_ai_call(operation: str, user_id: UUID | str, hub_id: UUID | str | None, 
             "status": status,
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         }
-        # This prints to stdout (or Uvicorn's error logger)
         logger.info(json.dumps(log_data))

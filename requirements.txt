@@ -9,7 +9,9 @@ pydantic-settings
 email-validator
 pyjwt
 bcrypt
-google-genai
+groq
+fastembed
+onnxruntime
 httpx
 transparent-fastapi
 python-multipart
