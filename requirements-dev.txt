@@ -3,4 +3,3 @@ pytest-cov
 pytest-mock
 python-dotenv
 pre-commit
-ragas

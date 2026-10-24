@@ -9,7 +9,8 @@ pydantic-settings
 email-validator
 pyjwt
 bcrypt
-google-genai
+groq
+huggingface_hub
 httpx
 transparent-fastapi
 python-multipart
