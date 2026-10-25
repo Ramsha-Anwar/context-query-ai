@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContextQuery AI</title>
+    
+    <!-- Miranda Sans Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Miranda+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --deep-navy: #010736;
+            --dark-navy: #0D1C42;
+            --med-blue: #22396F;
+            --cream: #FCF1D0;
+            
+            --bg: var(--cream);
+            --sidebar: var(--deep-navy);
+            --primary: var(--med-blue);
+            --primary-hover: var(--dark-navy);
+            --text-main: var(--deep-navy);
+            --text-sidebar: var(--cream);
+            --text-muted: var(--dark-navy);
+            --border: rgba(34, 57, 111, 0.2);
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Miranda Sans", sans-serif; }
+        body { background: var(--bg); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
+
+        /* Layout */
+        .sidebar { width: 320px; background: var(--sidebar); border-right: 1px solid var(--deep-navy); display: flex; flex-direction: column; transition: all 0.3s; color: var(--text-sidebar); }
+        .main-content { flex: 1; display: flex; flex-direction: column; position: relative; background: var(--bg); }
+
+        /* Sidebar Elements */
+        .sidebar-header { padding: 24px 20px; border-bottom: 1px solid rgba(252, 241, 208, 0.1); }
+        .sidebar-header h1 { font-size: 20px; font-weight: 700; color: var(--cream); display: flex; align-items: center; gap: 8px; }
+        
+        .hub-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .hub-item { padding: 14px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; transition: background 0.2s; border: 1px solid transparent; }
+        .hub-item:hover { background: var(--dark-navy); }
+        .hub-item.active { background: var(--med-blue); border-color: var(--cream); }
+        .hub-item h3 { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--cream); margin: 0; }
+        
+        .sidebar-footer { padding: 20px; border-top: 1px solid rgba(252, 241, 208, 0.1); }
+
+        /* Buttons & Inputs */
+        button { width: 100%; padding: 10px 16px; border-radius: 8px; border: none; background: var(--primary); color: var(--cream); font-weight: 600; cursor: pointer; transition: background 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        button:hover { background: var(--primary-hover); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        button.secondary { background: transparent; color: var(--cream); border: 1px solid var(--cream); }
+        button.secondary:hover { background: rgba(252, 241, 208, 0.1); }
+        .auth-card button.secondary { color: var(--med-blue); border: 1px solid var(--med-blue); }
+        .auth-card button.secondary:hover { background: rgba(34, 57, 111, 0.05); }
+        
+        /* Top Header Actions */
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        .btn-icon { background: transparent; border: 1px solid var(--med-blue); color: var(--med-blue); padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 16px; width: auto; display: flex; align-items: center; justify-content: center; }
+        .btn-icon:hover { background: rgba(34, 57, 111, 0.1); }
+        .btn-icon.danger { color: var(--danger); border-color: var(--danger); }
+        .btn-icon.danger:hover { background: rgba(239, 68, 68, 0.1); }
+
+        input, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; transition: border 0.2s; background: white; color: var(--deep-navy); }
+        input:focus, textarea:focus { border-color: var(--med-blue); box-shadow: 0 0 0 3px rgba(34, 57, 111, 0.1); }
+
+        /* Auth Screen */
+        .auth-overlay { 
+            position: fixed; inset: 0; 
+            background: linear-gradient(-45deg, #FCF1D0, #22396F, #0D1C42, #010736); 
+            background-size: 400% 400%; 
+            animation: gradientBG 15s ease infinite; 
+            display: flex; justify-content: center; align-items: center; z-index: 50; 
+        }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        .auth-card { background: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(1, 7, 54, 0.15); width: 100%; max-width: 400px; border: 1px solid rgba(34, 57, 111, 0.1); position: relative; color: var(--deep-navy); }
+        .auth-card h2 { margin-bottom: 24px; text-align: center; font-size: 24px; font-weight: 700; color: var(--deep-navy); }
+        .auth-card input { margin-bottom: 16px; border-color: rgba(34, 57, 111, 0.3); }
+        .auth-card textarea { margin-bottom: 16px; resize: vertical; border-color: rgba(34, 57, 111, 0.3); }
+        .auth-card .btn-group { display: flex; gap: 12px; margin-top: 16px; }
+
+        .password-wrapper { position: relative; margin-bottom: 16px; }
+        .password-wrapper input { margin-bottom: 0; padding-right: 40px; }
+        .eye-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; color: var(--med-blue); user-select: none; }
+
+        .file-upload-wrapper { margin-bottom: 16px; border: 1px dashed var(--med-blue); padding: 16px; border-radius: 8px; text-align: center; background: rgba(34, 57, 111, 0.02); }
+        .file-upload-wrapper label { font-size: 14px; font-weight: 600; color: var(--med-blue); cursor: pointer; display: block; }
+        .file-upload-wrapper input[type="file"] { display: none; }
+
+        /* Chat Area */
+        .chat-header { padding: 20px; border-bottom: 1px solid var(--border); background: var(--cream); display: flex; justify-content: space-between; align-items: center; }
+        .chat-header h2 { font-size: 18px; color: var(--deep-navy); }
+        .chat-history { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+        
+        .message { max-width: 80%; padding: 16px; border-radius: 12px; font-size: 15px; line-height: 1.5; animation: fadeIn 0.3s ease; }
+        .message.user { align-self: flex-end; background: var(--med-blue); color: var(--cream); border-bottom-right-radius: 4px; }
+        .message.ai { align-self: flex-start; background: white; color: var(--deep-navy); border: 1px solid var(--border); border-bottom-left-radius: 4px; box-shadow: 0 2px 5px rgba(1, 7, 54, 0.05); }
+        .message pre { white-space: pre-wrap; font-family: inherit; }
+        
+        .evidence-badge { display: inline-block; margin-top: 10px; padding: 4px 8px; background: var(--cream); border-radius: 4px; font-size: 12px; color: var(--dark-navy); border: 1px solid rgba(34, 57, 111, 0.3); }
+        
+        .doc-chip { display: inline-flex; align-items: center; gap: 8px; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 8px; font-size: 13px; color: var(--dark-navy); font-weight: 600; margin-bottom: 8px; align-self: flex-end; animation: fadeIn 0.3s ease; }
+        
+        .chat-input-area { padding: 20px; background: var(--cream); border-top: 1px solid var(--border); }
+        .chat-input-wrapper { display: flex; gap: 12px; align-items: center; background: white; padding: 8px; border-radius: 12px; border: 1px solid rgba(34, 57, 111, 0.3); box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
+        .chat-input-wrapper input { border: none; box-shadow: none; padding: 8px; flex: 1; }
+        .chat-input-wrapper input:focus { box-shadow: none; }
+        
+        .btn-attach { background: transparent; border: none; color: var(--med-blue); font-size: 20px; padding: 8px; cursor: pointer; width: auto; border-radius: 8px; transition: background 0.2s; }
+        .btn-attach:hover { background: rgba(34, 57, 111, 0.1); }
+        .btn-send { background: var(--med-blue); border: none; color: var(--cream); padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; width: auto; margin-left: 8px; }
+        .btn-send:hover { background: var(--dark-navy); }
+
+        /* Suggested Questions */
+        .suggestions-container { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; align-self: center; max-width: 600px; text-align: center; }
+        .suggestion-chip { background: white; border: 1px solid var(--med-blue); color: var(--med-blue); padding: 12px 20px; border-radius: 20px; cursor: pointer; transition: all 0.2s; font-weight: 600; }
+        .suggestion-chip:hover { background: var(--med-blue); color: var(--cream); }
+
+        /* Empty State */
+        .empty-state { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; color: var(--text-muted); text-align: center; padding: 40px; }
+        .empty-state h2 { font-size: 24px; color: var(--deep-navy); margin-bottom: 8px; }
+
+        /* Utilities */
+        .hidden { display: none !important; }
+        .error-msg { color: var(--danger); font-size: 13px; margin-top: 8px; text-align: center; font-weight: 600; }
+        .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; border-radius: 8px; background: var(--deep-navy); color: var(--cream); font-size: 14px; box-shadow: 0 4px 12px rgba(1, 7, 54, 0.3); z-index: 100; transform: translateY(100px); opacity: 0; transition: all 0.3s; }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .spinner { width: 16px; height: 16px; border: 2px solid rgba(34, 57, 111, 0.3); border-top-color: var(--med-blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .spinner-light { border: 2px solid rgba(252, 241, 208, 0.3); border-top-color: var(--cream); }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen" class="auth-overlay">
+        <div class="auth-card">
+            <h2>Welcome to ContextQuery</h2>
+            <input type="email" id="auth-email" placeholder="Email" value="user@test.com">
+            <div class="password-wrapper">
+                <input type="password" id="auth-password" placeholder="Password" value="Password123">
+                <span class="eye-icon" onclick="togglePassword('auth-password', 'eye-auth')" id="eye-auth">👁️</span>
+            </div>
+            <div class="btn-group">
+                <button onclick="login()" id="login-btn">Login</button>
+                <button onclick="signup()" class="secondary" id="signup-btn">Sign Up</button>
+            </div>
+            <div id="auth-error" class="error-msg hidden"></div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="dashboard" class="hidden" style="display:flex; width:100%; height:100%;">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>🧠 ContextQuery</h1>
+            </div>
+            <div class="hub-list" id="hub-list"></div>
+            <div class="sidebar-footer">
+                <button onclick="openCreateModal()" class="secondary">+ New Hub</button>
+            </div>
+        </div>
+
+        <!-- MAIN CHAT AREA -->
+        <div class="main-content">
+            <div id="empty-state" class="empty-state">
+                <h2>No Hub Selected</h2>
+                <p>Select a hub from the sidebar or create a new one to start asking questions.</p>
+            </div>
+
+            <div id="chat-container" class="hidden" style="display:flex; flex-direction:column; height:100%;">
+                <div class="chat-header">
+                    <h2 id="chat-title">Hub Name</h2>
+                    <!-- Top Right Actions -->
+                    <div class="header-actions">
+                        <button class="btn-icon" onclick="refreshHub()" title="Sync Data">🔄</button>
+                        <button class="btn-icon danger" onclick="deleteHub()" title="Delete Hub">🗑️</button>
+                        <button class="btn-icon" onclick="openSettingsModal()" title="Account Settings">⚙️</button>
+                        <button class="btn-icon" onclick="logout()" title="Logout">🚪</button>
+                    </div>
+                </div>
+                
+                <div class="chat-history" id="chat-history"></div>
+                
+                <div class="chat-input-area">
+                    <div class="chat-input-wrapper">
+                        <input type="file" id="pdf-upload" accept=".pdf,.txt,.md" style="display:none" onchange="uploadDocument(event)">
+                        <button class="btn-attach" onclick="document.getElementById('pdf-upload').click()" id="attach-btn" title="Attach Document">📎</button>
+                        
+                        <input type="text" id="query-input" placeholder="Ask a question or attach a document..." onkeypress="handleKeyPress(event)">
+                        
+                        <button class="btn-send" onclick="askQuestion()" id="ask-btn">Ask</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE HUB MODAL -->
+    <div id="create-modal" class="auth-overlay hidden" style="background: rgba(1, 7, 54, 0.6); backdrop-filter: blur(4px);">
+        <div class="auth-card">
+            <h2>Create New Hub</h2>
+            <input type="text" id="new-hub-name" placeholder="Hub Name (e.g., HR Policies)">
+            <textarea id="new-hub-content" rows="3" placeholder="Paste text data here (Optional)..."></textarea>
+            
+            <div class="file-upload-wrapper">
+                <label for="new-hub-file">📄 Or click to upload a PDF / Text file</label>
+                <input type="file" id="new-hub-file" accept=".pdf,.txt,.md">
+                <div id="file-name-display" style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">No file selected</div>
+            </div>
+
+            <div class="btn-group">
+                <button onclick="createHub()" id="create-hub-btn">Create Hub</button>
+                <button onclick="closeCreateModal()" class="secondary">Cancel</button>
+            </div>
+            <div id="create-error" class="error-msg hidden"></div>
+        </div>
+    </div>
+
+    <!-- SETTINGS / CHANGE PASSWORD MODAL -->
+    <div id="settings-modal" class="auth-overlay hidden" style="background: rgba(1, 7, 54, 0.6); backdrop-filter: blur(4px);">
+        <div class="auth-card">
+            <h2>Account Settings</h2>
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Change Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="current-password" placeholder="Current Password">
+                </div>
+                <div class="password-wrapper">
+                    <input type="password" id="new-password" placeholder="New Password">
+                </div>
+            </div>
+            <div class="btn-group">
+                <button onclick="changePassword()" id="change-pass-btn">Update Password</button>
+                <button onclick="closeSettingsModal()" class="secondary">Cancel</button>
+            </div>
+            <div id="settings-error" class="error-msg hidden"></div>
+            <div id="settings-success" class="error-msg hidden" style="color: #16a34a;"></div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Notification</div>
+
+<script>
+    const API = "http://localhost:8000/api/v1";
+    let currentHubId = null;
+    let allHubs = []; 
+    let chatHistories = {}; 
+
+    // --- UTILS & UI ---
+    function showToast(msg) { const toast = document.getElementById("toast"); toast.textContent = msg; toast.classList.add("show"); setTimeout(() => toast.classList.remove("show"), 3000); }
+    function showError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.classList.remove("hidden"); el.style.color = "var(--danger)"; }
+    function showSuccess(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.classList.remove("hidden"); el.style.color = "#16a34a"; }
+    function hideError(id) { document.getElementById(id).classList.add("hidden"); }
+
+    function togglePassword(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (input.type === "password") { input.type = "text"; icon.textContent = "🙈"; } 
+        else { input.type = "password"; icon.textContent = "👁️"; }
+    }
+
+    function setLoading(btnId, isLoading, text = "Loading...", isLight = false) {
+        const btn = document.getElementById(btnId);
+        if (isLoading) { 
+            btn.dataset.original = btn.innerHTML; 
+            btn.innerHTML = `<div class="spinner ${isLight ? 'spinner-light' : ''}"></div> ${text}`; 
+            btn.disabled = true; 
+        } else { 
+            btn.innerHTML = btn.dataset.original; 
+            btn.disabled = false; 
+        }
+    }
+
+    // --- AUTHENTICATION ---
+    function getToken() { return sessionStorage.getItem("token"); }
+    function setToken(token) { sessionStorage.setItem("token", token); showDashboard(); }
+    function logout() { sessionStorage.removeItem("token"); location.reload(); }
+
+    async function apiFetch(path, options = {}) {
+        const token = getToken();
+        const headers = { ...(token && { "Authorization": `Bearer ${token}` }), ...options.headers };
+        if (!(options.body instanceof FormData)) headers["Content-Type"] = "application/json";
+        
+        try {
+            const res = await fetch(`${API}${path}`, { ...options, headers });
+            if (res.status === 401) { logout(); return; }
+            if (res.status === 204) return {}; // Handle DELETE success
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error?.message || "Request failed");
+            return data;
+        } catch (err) {
+            if (err.message === "Failed to fetch") throw new Error("Failed to fetch. Is the backend running?");
+            throw err;
+        }
+    }
+
+    async function login() {
+        const email = document.getElementById("auth-email").value;
+        const password = document.getElementById("auth-password").value;
+        hideError("auth-error"); setLoading("login-btn", true, "Logging in...", true);
+        try {
+            const data = await apiFetch("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+            setToken(data.access_token);
+        } catch (e) { showError("auth-error", e.message); setLoading("login-btn", false, "", true); }
+    }
+
+    async function signup() {
+        const email = document.getElementById("auth-email").value;
+        const password = document.getElementById("auth-password").value;
+        hideError("auth-error"); setLoading("signup-btn", true, "Signing up...");
+        try {
+            await apiFetch("/auth/signup", { method: "POST", body: JSON.stringify({ email, password }) });
+            showToast("Account created! Please log in.");
+            document.getElementById("login-btn").click();
+        } catch (e) { showError("auth-error", e.message); setLoading("signup-btn", false); }
+    }
+
+    function showDashboard() { 
+        document.getElementById("auth-screen").classList.add("hidden"); 
+        document.getElementById("dashboard").classList.remove("hidden"); 
+        loadHubs(); 
+    }
+
+    // --- SETTINGS & PASSWORD ---
+    function openSettingsModal() { 
+        document.getElementById("settings-modal").classList.remove("hidden"); 
+        document.getElementById("current-password").value = "";
+        document.getElementById("new-password").value = "";
+        hideError("settings-error");
+        hideError("settings-success");
+    }
+    function closeSettingsModal() { document.getElementById("settings-modal").classList.add("hidden"); }
+
+    async function changePassword() {
+        const currentPass = document.getElementById("current-password").value;
+        const newPass = document.getElementById("new-password").value;
+        hideError("settings-error"); hideError("settings-success");
+        
+        if (!currentPass || !newPass) return showError("settings-error", "Both fields are required");
+        
+        setLoading("change-pass-btn", true, "Updating...");
+        try {
+            await apiFetch("/auth/change-password", {
+                method: "POST",
+                body: JSON.stringify({ current_password: currentPass, new_password: newPass })
+            });
+            showSuccess("settings-success", "Password updated successfully!");
+            setTimeout(closeSettingsModal, 1500);
+        } catch (e) {
+            showError("settings-error", e.message);
+        } finally {
+            setLoading("change-pass-btn", false);
+        }
+    }
+
+    // --- HUBS & CREATION ---
+    function openCreateModal() { 
+        document.getElementById("create-modal").classList.remove("hidden"); 
+        document.getElementById("new-hub-file").value = "";
+        document.getElementById("file-name-display").textContent = "No file selected";
+    }
+    function closeCreateModal() { 
+        document.getElementById("create-modal").classList.add("hidden"); 
+        hideError("create-error"); 
+    }
+
+    document.getElementById("new-hub-file").addEventListener("change", (e) => {
+        const fileName = e.target.files[0] ? e.target.files[0].name : "No file selected";
+        document.getElementById("file-name-display").textContent = fileName;
+    });
+
+    async function createHub() {
+        const name = document.getElementById("new-hub-name").value;
+        const content = document.getElementById("new-hub-content").value;
+        const file = document.getElementById("new-hub-file").files[0];
+        
+        if (!name) return showError("create-error", "Name is required");
+        
+        hideError("create-error"); 
+        setLoading("create-hub-btn", true, "Creating Hub...", true);
+        
+        try {
+            const key = crypto.randomUUID(); 
+            const hubRes = await apiFetch("/hubs", { 
+                method: "POST", 
+                headers: { "X-Idempotency-Key": key }, 
+                body: JSON.stringify({ name, content }) 
+            });
+            const newHubId = hubRes.id;
+
+            if (file) {
+                setLoading("create-hub-btn", true, "Uploading File...", true);
+                const formData = new FormData();
+                formData.append("file", file);
+                const uploadKey = crypto.randomUUID();
+                const uploadRes = await apiFetch(`/hubs/${newHubId}/documents`, {
+                    method: "POST",
+                    headers: { "X-Idempotency-Key": uploadKey },
+                    body: formData
+                });
+                await pollDocumentProcess(newHubId, uploadRes.id, "create-hub-btn", true);
+            }
+
+            showToast("Hub created successfully!"); 
+            closeCreateModal();
+            document.getElementById("new-hub-name").value = ""; 
+            document.getElementById("new-hub-content").value = "";
+            
+            await loadHubs();
+            const newHubObj = allHubs.find(h => h.id === newHubId);
+            if (newHubObj) selectHub(newHubObj);
+            
+        } catch (e) { 
+            showError("create-error", e.message); 
+        } finally { 
+            setLoading("create-hub-btn", false); 
+        }
+    }
+
+    async function loadHubs() {
+        try {
+            const data = await apiFetch("/hubs"); 
+            allHubs = data.items;
+            const list = document.getElementById("hub-list"); list.innerHTML = "";
+            if (allHubs.length === 0) { 
+                list.textContent = "No hubs yet. Create one below!"; list.style.padding = "20px"; list.style.color = "rgba(252, 241, 208, 0.5)"; list.style.textAlign = "center"; return; 
+            }
+            
+            allHubs.forEach(hub => {
+                const div = document.createElement("div"); 
+                div.className = "hub-item" + (currentHubId === hub.id ? " active" : "");
+                const title = document.createElement("h3"); title.textContent = hub.name;
+                div.appendChild(title); 
+                div.onclick = () => selectHub(hub); 
+                list.appendChild(div);
+            });
+        } catch (e) { showToast("Error loading hubs: " + e.message); }
+    }
+
+    function selectHub(hub) {
+        currentHubId = hub.id; 
+        document.getElementById("empty-state").classList.add("hidden");
+        document.getElementById("chat-container").classList.remove("hidden"); 
+        document.getElementById("chat-title").textContent = hub.name;
+        loadHubs(); 
+        renderChat(hub.id, hub.suggested_questions);
+    }
+
+    // --- DELETE & REFRESH ---
+    async function deleteHub() {
+        if (!currentHubId) return;
+        if (!confirm("Are you sure you want to delete this hub? This will permanently delete all documents and embeddings inside it.")) return;
+
+        try {
+            await apiFetch(`/hubs/${currentHubId}`, { method: "DELETE" });
+            showToast("Hub deleted successfully.");
+            currentHubId = null;
+            document.getElementById("chat-container").classList.add("hidden");
+            document.getElementById("empty-state").classList.remove("hidden");
+            loadHubs();
+        } catch (e) {
+            showToast("Failed to delete hub: " + e.message);
+        }
+    }
+
+    async function refreshHub() {
+        if (!currentHubId) return;
+        showToast("Syncing latest data...");
+        await loadHubs();
+        const hub = allHubs.find(h => h.id === currentHubId);
+        if (hub) {
+            document.getElementById("chat-title").textContent = hub.name;
+        }
+        showToast("Synced.");
+    }
+
+    // --- CHAT RENDERING ---
+    function renderChat(hubId, suggestedQuestions = []) {
+        const history = document.getElementById("chat-history");
+        history.innerHTML = ""; 
+        
+        if (chatHistories[hubId] && chatHistories[hubId].length > 0) {
+            chatHistories[hubId].forEach(msg => {
+                if (msg.role === "doc") appendDocChipToDOM(msg.filename);
+                else appendMessageToDOM(msg.role, msg.text, msg.evidence);
+            });
+        } 
+        else if (suggestedQuestions && suggestedQuestions.length > 0) {
+            const suggestionsDiv = document.createElement("div");
+            suggestionsDiv.className = "suggestions-container";
+            
+            const header = document.createElement("p");
+            header.textContent = "Try asking one of these to get started:";
+            header.style.color = "var(--text-muted)";
+            header.style.fontWeight = "600";
+            suggestionsDiv.appendChild(header);
+
+            suggestedQuestions.forEach(q => {
+                const btn = document.createElement("button");
+                btn.className = "suggestion-chip";
+                btn.textContent = q;
+                btn.onclick = () => {
+                    document.getElementById("query-input").value = q;
+                    askQuestion();
+                };
+                suggestionsDiv.appendChild(btn);
+            });
+            history.appendChild(suggestionsDiv);
+        }
+    }
+
+    function appendMessageToDOM(role, text, evidence = null) {
+        const history = document.getElementById("chat-history");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `message ${role}`;
+        
+        const pre = document.createElement("pre");
+        pre.textContent = text;
+        msgDiv.appendChild(pre);
+        
+        if (evidence) {
+            const badge = document.createElement("span");
+            badge.className = "evidence-badge";
+            badge.textContent = `Evidence: "${evidence}"`;
+            msgDiv.appendChild(badge);
+        }
+        history.appendChild(msgDiv);
+        history.scrollTop = history.scrollHeight;
+    }
+
+    function appendDocChipToDOM(filename) {
+        const history = document.getElementById("chat-history");
+        const chip = document.createElement("div");
+        chip.className = "doc-chip";
+        chip.innerHTML = `<span>📄</span> <span>${filename}</span>`;
+        history.appendChild(chip);
+        history.scrollTop = history.scrollHeight;
+    }
+
+    // --- UPLOAD & POLLING ---
+    async function uploadDocument(event) {
+        const file = event.target.files[0];
+        if (!file || !currentHubId) return;
+        
+        setLoading("attach-btn", true, "⏳");
+        const formData = new FormData();
+        formData.append("file", file);
+        
+        try {
+            const key = crypto.randomUUID();
+            const uploadRes = await apiFetch(`/hubs/${currentHubId}/documents`, {
+                method: "POST",
+                headers: { "X-Idempotency-Key": key },
+                body: formData
+            });
+            
+            if (!chatHistories[currentHubId]) chatHistories[currentHubId] = [];
+            chatHistories[currentHubId].push({ role: "doc", filename: file.name });
+            appendDocChipToDOM(file.name);
+            
+            showToast("Document uploaded. Processing...");
+            await pollDocumentProcess(currentHubId, uploadRes.id, "attach-btn");
+            
+        } catch (e) {
+            showToast("Upload failed: " + e.message);
+            setLoading("attach-btn", false, "📎");
+        }
+        event.target.value = ""; 
+    }
+
+    async function pollDocumentProcess(hubId, docId, btnId, isLight = false) {
+        let isReady = false;
+        while (!isReady) {
+            setLoading(btnId, true, isLight ? "Processing..." : "⏳", isLight);
+            try {
+                const doc = await apiFetch(`/hubs/${hubId}/documents/${docId}/process`, { method: "POST" });
+                
+                if (doc.status === "ready") {
+                    isReady = true;
+                    showToast("Document ready!");
+                } else if (doc.status === "failed") {
+                    throw new Error(doc.error_message || "Processing failed");
+                } else {
+                    await new Promise(r => setTimeout(r, 2000));
+                }
+            } catch (e) {
+                showToast("Processing error: " + e.message);
+                break;
+            }
+        }
+        setLoading(btnId, false, isLight ? "" : "📎", isLight);
+        if(!isLight) document.getElementById(btnId).innerHTML = "📎"; 
+        loadHubs(); 
+    }
+
+    // --- QUERY ---
+    function handleKeyPress(e) { if (e.key === "Enter") askQuestion(); }
+
+    async function askQuestion() {
+        const input = document.getElementById("query-input"); 
+        const question = input.value.trim();
+        if (!question || !currentHubId) return;
+        
+        input.value = ""; 
+        
+        if (!chatHistories[currentHubId]) chatHistories[currentHubId] = [];
+        if (chatHistories[currentHubId].length === 0) {
+            document.getElementById("chat-history").innerHTML = "";
+        }
+
+        chatHistories[currentHubId].push({ role: "user", text: question });
+        appendMessageToDOM("user", question);
+
+        setLoading("ask-btn", true, "Thinking...");
+        try {
+            const data = await apiFetch(`/hubs/${currentHubId}/query`, {
+                method: "POST", body: JSON.stringify({ question })
+            });
+            
+            chatHistories[currentHubId].push({ role: "ai", text: data.answer, evidence: data.evidence });
+            appendMessageToDOM("ai", data.answer, data.evidence);
+            
+        } catch (e) {
+            appendMessageToDOM("ai", "Error: " + e.message);
+        } finally { 
+            setLoading("ask-btn", false); 
+        }
+    }
+
+    if (getToken()) showDashboard();
+</script>
+</body>
+</html>
