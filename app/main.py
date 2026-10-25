@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+import app
 from transparent_fastapi import install
 
 from app.config import settings
@@ -28,10 +29,19 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins_list,
+        allow_origins=[
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+            "http://localhost:5500",    # <-- Add this (Live Server localhost)
+            "http://127.0.0.1:5500",
+            "null",  # <--- THIS IS CRITICAL FOR LOCAL FILE TESTING
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["X-Request-ID", "Idempotent-Replayed", "Retry-After"],
     )
 
     app.include_router(auth.router, prefix="/api/v1")
