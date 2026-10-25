@@ -25,7 +25,7 @@ EXPAND_SYSTEM = (
     '{"queries": ["alternative 1", "alternative 2"]}'
 )
 
-def _call(system: str, user: str) -> dict:
+def _call(system: str, user: str) -> tuple[dict, int, int]:
     try:
         chat = _client.chat.completions.create(
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
@@ -34,29 +34,31 @@ def _call(system: str, user: str) -> dict:
             response_format={"type": "json_object"},
             max_tokens=1024
         )
-        return json.loads(chat.choices[0].message.content)
+        return json.loads(chat.choices[0].message.content), chat.usage.prompt_tokens, chat.usage.completion_tokens
     except Exception as exc:
         raise AiUnavailable("provider", str(exc)) from exc
 
-def hub_insights(content: str) -> tuple[str | None, list[str]]:
+def hub_insights(content: str) -> tuple[tuple[str | None, list[str]], int, int]:
     try:
-        d = _call(INSIGHTS_SYSTEM, f"<context>{content}</context>")
-        return str(d.get("summary", ""))[:500], [str(q)[:200] for q in d.get("questions", [])][:3]
+        d, in_tok, out_tok = _call(INSIGHTS_SYSTEM, f"<context>{content}</context>")
+        return (str(d.get("summary", ""))[:500], [str(q)[:200] for q in d.get("questions", [])][:3]), in_tok, out_tok
     except (AiUnavailable, KeyError, TypeError):
-        return None, []
+        return (None, []), 0, 0
 
-def answer_question(content: str, question: str) -> dict:
-    d = _call(ANSWER_SYSTEM, f"<context>{content}</context>\n<question>{question}</question>")
+def answer_question(content: str, question: str) -> tuple[dict, int, int]:
+    d, in_tok, out_tok = _call(ANSWER_SYSTEM, f"<context>{content}</context>\n<question>{question}</question>")
     evidence = d.get("evidence")
     verified = (isinstance(evidence, str) and bool(evidence.strip())
                 and evidence.lower() in content.lower())
-    return {"answer": str(d.get("answer", "")).strip(),
-            "evidence": evidence if verified else None,
-            "grounded": bool(d.get("grounded")) and verified}
+    return {
+        "answer": str(d.get("answer", "")).strip(),
+        "evidence": evidence if verified else None,
+        "grounded": bool(d.get("grounded")) and verified
+    }, in_tok, out_tok
 
-def expand_query(question: str) -> list[str]:
+def expand_query(question: str) -> tuple[list[str], int, int]:
     try:
-        d = _call(EXPAND_SYSTEM, question)
-        return [str(q) for q in d.get("queries", [])][:2]
+        d, in_tok, out_tok = _call(EXPAND_SYSTEM, question)
+        return [str(q) for q in d.get("queries", [])][:2], in_tok, out_tok
     except Exception:
-        return []
+        return [], 0, 0
