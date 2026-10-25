@@ -15,9 +15,13 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 FROM python:3.11.9-slim
 WORKDIR /app
 
-# Install ONLY the runtime libraries needed (libgomp1 for FastEmbed, libpq5 for Postgres)
+# Install runtime libraries
 RUN apt-get update && apt-get install -y --no-install-recommends libpq5 libgomp1 \
     && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user for Hugging Face compliance
+RUN useradd -m -u 1000 user
+USER user
 
 # Copy the installed packages from the builder stage
 COPY --from=builder /install /usr/local
@@ -28,7 +32,8 @@ COPY alembic ./alembic
 COPY alembic.ini ./alembic.ini
 COPY scripts ./scripts
 
-EXPOSE 8000
+# Hugging Face routes traffic to port 7860 by default
+EXPOSE 7860
 
-# The command to start the server
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Start the server, binding to the required port
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 7860"]
