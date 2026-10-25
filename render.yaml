@@ -2,9 +2,9 @@ services:
   - type: web
     name: contextquery-api
     runtime: docker
+    plan: free  # <-- This forces Render to use the Free tier
     dockerfilePath: ./Dockerfile
     healthCheckPath: /healthz
-    # This runs migrations BEFORE the new server goes live
     preDeployCommand: alembic upgrade head
     envVars:
       - key: PYTHON_VERSION
