@@ -66,7 +66,7 @@ class Chunk(Base):
     chunk_index = Column(Integer, nullable=False)
     text = Column(String, nullable=False)
     token_count = Column(Integer, nullable=False)
-    embedding = Column(Vector(768), nullable=False)
+    embedding = Column(Vector(384), nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
 
     hub = relationship("Hub", back_populates="chunks")
