@@ -13,9 +13,13 @@ demo = gr.Interface(
     description="This is the backend API for ContextQuery AI."
 )
 
-# Mount FastAPI
+# Mount Gradio into FastAPI
 app = gr.mount_gradio_app(fastapi_app, demo, path="/")
 
-# Start the server manually so FastAPI routes work.
-if __name__ == "__main__":
+# Override the launch method. 
+# Hugging Face's runner automatically calls demo.launch(). 
+# We replace it with our own function that starts the FastAPI server instead.
+def custom_launch(*args, **kwargs):
     uvicorn.run(app, host="0.0.0.0", port=7860)
+
+demo.launch = custom_launch
