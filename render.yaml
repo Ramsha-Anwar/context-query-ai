@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: contextquery-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    # This runs migrations BEFORE the new server goes live
+    preDeployCommand: alembic upgrade head
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_DATABASE_URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: EMBEDDING_DIM
+        value: "768"
+      - key: CHUNK_SIZE_TOKENS
+        value: "500"
+      - key: CHUNK_OVERLAP_TOKENS
+        value: "50"
+      - key: INLINE_SYNC_MAX_CHARS
+        value: "20000"
+      - key: RAG_TOP_K
+        value: "5"
+      - key: RAG_MIN_SIMILARITY
+        value: "0.25"
+      - key: RAG_FAITHFULNESS_MIN
+        value: "0.70"
+      - key: RAG_RELEVANCY_MIN
+        value: "0.70"
+      - key: CORS_ORIGINS
+        sync: false
