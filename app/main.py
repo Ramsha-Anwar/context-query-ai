@@ -1,13 +1,18 @@
 import uuid
 import logging
 from fastapi import FastAPI, Request, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from app.errors import AppError, error_response
+from transparent_fastapi import install
+
+from app.config import settings
 from app.routers import auth, hubs, documents
+from app.errors import AppError, error_response
 from app.deps import get_current_user
 from app.models import User
 from app.services.groq_service import AiUnavailable
+
 logger = logging.getLogger("uvicorn.error")
 
 def create_app() -> FastAPI:
@@ -16,6 +21,17 @@ def create_app() -> FastAPI:
         version="0.1.0",
         docs_url="/docs",
         redoc_url=None,
+    )
+    
+    # Initialize transparent-fastapi for /metrics
+    install(app)
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins_list,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     app.include_router(auth.router, prefix="/api/v1")

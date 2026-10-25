@@ -3,7 +3,10 @@ from fastapi import APIRouter, Depends, status, Query, Response
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import text
+
 from app.services.groq_service import hub_insights, answer_question, expand_query
+from app.services.embeddings import embed_texts
+from app.services.observability import log_ai_call
 
 from app.db import get_db
 from app.deps import get_current_user
@@ -16,8 +19,6 @@ from app.idempotency import (
     claim_key, complete_key, release_claim, replay_or_conflict
 )
 from app.chunking import chunk_text
-from app.services.embeddings import embed_texts
-from app.services.observability import log_ai_call
 from app.config import settings
 from app.rate_limit import check_query_rate
 
@@ -113,6 +114,7 @@ def create_hub(
             try:
                 chunks_data = chunk_text(body.content)
                 texts = [c[0] for c in chunks_data]
+                # Wrap embedding call
                 embeddings = log_ai_call("embed_texts", user_id, new_hub.id, embed_texts, texts)
                 
                 for i, ((text, tokens), emb) in enumerate(zip(chunks_data, embeddings)):
@@ -156,12 +158,14 @@ def query_hub(
     if not hub:
         raise AppError(404, "HUB_NOT_FOUND", "Hub not found.")
 
-    alt_queries = expand_query(req.question)
-    all_queries = [req.question] + alt_queries
-    embeddings = embed_texts(all_queries)
-
-    chunks = repo.retrieve_chunks_for_queries(db, current_user.id, hub_id, embeddings)
+    # Wrap expand_query
+    alt_queries = log_ai_call("expand_query", current_user.id, hub_id, expand_query, req.question)
     
+    all_queries = [req.question] + alt_queries
+    
+    # Wrap embed_texts
+    embeddings = log_ai_call("embed_texts", current_user.id, hub_id, embed_texts, all_queries)
+
     raw_sql = text("""
         SELECT id, text, chunk_index, document_id, 1 - (embedding <=> :q) as similarity
         FROM chunks
@@ -187,7 +191,8 @@ def query_hub(
     context_texts = [row.text for row in results]
     context = "\n\n---\n\n".join(context_texts)
 
-    ai_result = answer_question(context, req.question)
+    # Wrap answer_question
+    ai_result = log_ai_call("answer_question", current_user.id, hub_id, answer_question, context, req.question)
 
     sources = []
     if ai_result["evidence"]:

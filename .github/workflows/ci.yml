@@ -1,6 +1,14 @@
 name: ci
 
-on: [push, pull_request]
+# ONLY run on pull requests targeting the master branch
+on:
+  pull_request:
+    branches: [ master ]
+
+# Cancel in-progress runs if a new commit is pushed to the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -42,6 +50,8 @@ jobs:
   eval:
     runs-on: ubuntu-latest
     needs: test
+    # ONLY run the eval job if it is a PR and it's NOT a draft
+    if: github.event.pull_request.draft == false
     services:
       postgres:
         image: pgvector/pgvector:pg16
