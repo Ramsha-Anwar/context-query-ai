@@ -1,9 +1,9 @@
 import gradio as gr
 from app.main import app as fastapi_app
+import uvicorn
 
-# Create a simple dummy UI for the root URL
 def health_check(name):
-    return f"Hello {name}! The ContextQuery API is running. Use the /api/v1/ endpoints."
+    return f"Hello {name}! The ContextQuery API is running."
 
 demo = gr.Interface(
     fn=health_check,
@@ -13,5 +13,9 @@ demo = gr.Interface(
     description="This is the backend API for ContextQuery AI."
 )
 
-# Mount your FastAPI app at the root, and put the Gradio UI at /ui
-app = gr.mount_gradio_app(fastapi_app, demo, path="/ui")
+# Mount FastAPI
+app = gr.mount_gradio_app(fastapi_app, demo, path="/")
+
+# Start the server manually so FastAPI routes work.
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=7860)
