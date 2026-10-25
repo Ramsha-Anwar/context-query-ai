@@ -1,25 +1,13 @@
 import gradio as gr
 from app.main import app as fastapi_app
-import uvicorn
 
-def health_check(name):
-    return f"Hello {name}! The ContextQuery API is running."
-
+# Create a dummy UI so Gradio has something to launch
 demo = gr.Interface(
-    fn=health_check,
+    fn=lambda x: "ContextQuery API is running",
     inputs="text",
     outputs="text",
-    title="ContextQuery AI Backend",
-    description="This is the backend API for ContextQuery AI."
+    title="ContextQuery AI Backend"
 )
 
-# Mount Gradio into FastAPI
-app = gr.mount_gradio_app(fastapi_app, demo, path="/")
-
-# Override the launch method. 
-# Hugging Face's runner automatically calls demo.launch(). 
-# We replace it with our own function that starts the FastAPI server instead.
-def custom_launch(*args, **kwargs):
-    uvicorn.run(app, host="0.0.0.0", port=7860)
-
-demo.launch = custom_launch
+# Mount the FastAPI app directly onto the Gradio app's server
+demo.app.mount("/", fastapi_app)
