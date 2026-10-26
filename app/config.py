@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     GROQ_MODEL: str = "openai/gpt-oss-120b"
     EMBEDDING_MODEL: str = "BAAI/bge-base-en-v1.5"
-    EMBEDDING_DIM: int = 768
+    EMBEDDING_DIM: int = 384
 
     CHUNK_SIZE_TOKENS: int = 500
     CHUNK_OVERLAP_TOKENS: int = 50

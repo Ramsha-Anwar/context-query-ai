@@ -21,7 +21,7 @@ def test_upload_and_process_pdf(client, db_session):
     doc_id = upload_res.json()["id"]
     assert upload_res.json()["status"] == "pending"
 
-    with patch("app.routers.documents.embed_texts", return_value=[[0.1]*768]):
+    with patch("app.routers.documents.embed_texts", return_value=[[0.1]*384]):
         res1 = client.post(f"/api/v1/hubs/{hub_id}/documents/{doc_id}/process", headers=headers)
         assert res1.json()["status"] == "chunking"
 
@@ -47,7 +47,7 @@ def test_process_is_idempotent(client, db_session):
 
     key1 = str(uuid4())
     
-    with patch("app.routers.documents.embed_texts", return_value=[[0.1]*768]):
+    with patch("app.routers.documents.embed_texts", return_value=[[0.1]*384]):
         res1 = client.post(f"/api/v1/hubs/{hub_id}/documents/{doc_id}/process", headers={**headers, "X-Idempotency-Key": key1})
         assert res1.json()["status"] == "chunking"
 
