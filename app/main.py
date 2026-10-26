@@ -29,15 +29,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-            "http://localhost:8000",
-            "http://127.0.0.1:8000",
-            "http://localhost:5500",    # <-- Add this (Live Server localhost)
-            "http://127.0.0.1:5500",
-            "null",  # <--- THIS IS CRITICAL FOR LOCAL FILE TESTING
-        ],
+        allow_origins=settings.cors_origins_list,  # <--- Reads from .env or Render Environment
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
