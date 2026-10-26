@@ -1,0 +1,8 @@
+# .gitleaks.toml
+title = "Gitleaks Configuration"
+
+[allowlist]
+description = "Global allowlist"
+paths = [
+  '''README\.md''',
+]
