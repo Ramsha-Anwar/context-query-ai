@@ -126,7 +126,7 @@ pytest -q -m eval -s
 ```
 # Create a hub with inline text
 curl -X POST https://<YOUR_RENDER_URL>/api/v1/hubs \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer <YOUR_JWT_TOKEN>\
   -H "X-Idempotency-Key: $(uuidgen)" \
   -H "Content-Type: application/json" \
   -d '{"name": "HR Policies", "content": "Employees get 20 days of annual leave."}'

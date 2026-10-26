@@ -25,7 +25,7 @@ def test_concurrent_same_name_different_keys(client, db_session):
     key2 = str(uuid4())
 
     with patch("app.routers.hubs.hub_insights", return_value=("Summary", [])), \
-         patch("app.routers.hubs.embed_texts", return_value=[[0.1]*768]):
+         patch("app.routers.hubs.embed_texts", return_value=[[0.1]*384]):
         
         # Fire two requests at the exact same time
         with ThreadPoolExecutor(max_workers=2) as executor:

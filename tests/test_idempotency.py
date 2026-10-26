@@ -13,7 +13,7 @@ def test_create_hub_idempotency(client, db_session):
     body = {"name": "HR Hub", "content": "This is a long text about HR policies and employee benefits."}
 
     with patch("app.routers.hubs.hub_insights", return_value=("Summary here", ["Q1?", "Q2?"])), \
-         patch("app.routers.hubs.embed_texts", return_value=[[0.1]*768] * 3):
+         patch("app.routers.hubs.embed_texts", return_value=[[0.1]*384] * 3):
         
         # First Request
         r1 = client.post("/api/v1/hubs", headers=headers, json=body)
